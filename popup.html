@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<!--
+ This page is shown when the extension button is clicked, because the
+ "browser_action" field in manifest.json contains the "default_popup" key with
+ value "popup.html".
+ -->
+<html>
+  <head>
+    <title>Better Translator</title>
+    <style>
+      body {
+        font-family: sans-serif;
+        font-size: 100%;
+      }
+      #status {
+        /* avoid an excessively wide status text */
+        white-space: pre;
+        text-overflow: ellipsis;
+        overflow: hidden;
+        max-width: 800px
+;b      }
+    </style>
+
+    <!--
+      - JavaScript and HTML must be in separate files: see our Content Security
+      - Policy documentation[1] for details and explanation.
+      -
+      - [1]: https://developer.chrome.com/extensions/contentSecurityPolicy
+     -->
+    <script src="popup.js"></script>
+  </head>
+  <body>
+
+  <form id="translation-form" method="get" onsubmit="return performTranslation()">
+  <div class="row-fluid">
+
+
+      <div class="span3">
+        <label>Source Language</label>
+        <select name="sl" onchange="state.selectSource(this.value)">
+          <option value="auto">{{ _("Detect language" ) }}</option>
+          {{ language_options | safe }}
+        </select>
+      </div>
+      <div class="span3">
+        <label>{{ _("Intermediate Language") }}</label>
+        <select name="il" onchange="state.selectIntermediate(this.value)">
+          <option value="">{{ _("None") }}</option>
+          <option value="ja">{{ _("Japanese") }}</option>
+          <option value="ru">{{ _("Russian") }}</option>
+        </select>
+      </div>
+
+      <div class="span3">
+        <label>{{ _("Target Language") }}</label>
+        <select name="tl" onchange="state.selectTarget(this.value)">
+            {{ language_options | safe }}
+        </select>
+      </div>
+
+      <div class="span3" style="text-align:right;">
+        <label>&nbsp;</label>
+        <button class="btn" onclick="state.swapLanguages()"
+          data-toggle="tooltip" data-placement="top"
+          title="{{ _('Swap languages') }}">
+          <img src="/static/swap.png" alt="{{ _("Swap languages") }}"/>
+        </button>
+        <button class="btn btn-primary translate">{{ _("Translate") }}</button>
+      </div>
+
+  </div>
+  <div class="row-fluid" style="margin-top:1em;">
+    <div class="span6">
+
+      <textarea id="text" name="t" placeholder="{{ _('Type in your sentences') }}"></textarea>
+
+      <div id="search-results" class="hide">
+        {{ _("Similar translations") }}
+        <ul></ul>
+      </div>
+    </div>
+    <div class="span6">
+
+      <div id="error-message" class="alert alert-error"></div>
+      <div>
+        <div id="progress-message" style="float:left;">
+          {{ _("Translation in progress...") }} <img src="/static/progress.gif"/>
+        </div>
+        <pre id="result"></pre>
+      </div>
+
+      <div id="feedback">
+          <div id="help-request" style="visibility:hidden;">
+            <!--
+            {{ _("Did you not like this translation?") }}
+            <a href="#help-request-dialog" data-toggle="modal">{{ _("Ask for help") }}</a>.
+            -->
+          </div>
+          <div id="appreciation" style="visibility:hidden;">
+              {{ _("Thank you for your feedback.") }}
+          </div>
+      </div>
+    </div>
+  </div>
+  </form>
+
+  <div id="aux-naver-endic" style="display:none;">
+    <a href="#naver-endic-dialog" data-toggle="modal">네이버 영어 사전 검색 결과 보기</a>
+  </div>
+
+<div id="naver-endic-dialog" class="modal hide fade">
+  <div class="modal-body">
+    <iframe></iframe>
+  </div>
+  <div class="modal-footer">
+    <a href="#" class="btn" data-dismiss="modal">{{ _("Close") }}</a>
+  </div>
+</div>
+
+<div id="captcha-dialog" class="modal hide fade">
+  <div class="modal-header">
+    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+    <h3>Opps...</h3>
+  </div>
+  <div class="modal-body">
+  </div>
+  <div class="modal-footer">
+    <a href="#" class="btn" data-dismiss="modal">{{ _("Close") }}</a>
+  </div>
+</div>
+
+<!--<script type="text/javascript" src="/static/jquery.succinct.js"></script>-->
+<script type="text/javascript">
+window.onload = function() {
+    // The following code was copied from
+    // http://stackoverflow.com/questions/2161906/handle-url-anchor-change-event-in-js
+    if ("onhashchange" in window) { // event supported?
+        window.onhashchange = function () {
+            hashChanged(window.location.hash);
+        };
+    }
+    else { // event not supported:
+        var storedHash = window.location.hash;
+        window.setInterval(function () {
+            if (window.location.hash != storedHash) {
+                storedHash = window.location.hash;
+                hashChanged(storedHash);
+            }
+        }, 250);
+    }
+    if (state.id) {
+        //askForRating(state.requestId);
+    }
+    else {
+        if (getParameterByName("t")) {
+            state.initWithParameters();
+            performTranslation();
+        }
+        else {
+            state.init();
+            hashChanged(window.location.hash ? window.location.hash : "");
+        }
+    }
+    state.invalidateUI();
+    $("#text, #result").autoResize({
+        // On resize:
+        onResize: function() {
+            $(this).css({opacity:0.8});
+        },
+        // After resize:
+        animateCallback: function() {
+            $(this).css({opacity:1});
+        },
+        // Quite slow animation:
+        animateDuration: 300,
+        // More extra space:
+        extraSpace: 40
+    })
+    .keypress(function (event) {
+        state.text = $("#text").val();
+        if (event.keyCode == 13) {
+            performTranslation();
+        }
+    })
+    .trigger("change");
+    $("button.to-mode").click(function(evt) {
+        var button = $(evt.target);
+        button.addClass("active");
+        state.setMode(button.attr("value"));
+        performTranslation();
+    });
+    // Initialize tooltips
+    $("button[data-toggle=tooltip]").tooltip();
+};
+window.onpopstate = function(event) {
+    if (event.state != null) {
+        state.initWithState(event.state);
+    }
+};
+function showGoogleForm() {
+    $("#google-form-dialog").modal();
+}
+function populateSearchResults(results) {
+    var ul = $("#search-results ul");
+    ul.empty();
+    $.each(results, function(index, value) {
+        // http://stackoverflow.com/questions/4637942/how-can-i-truncate-a-string-in-jquery
+        //var originalText = $.trim(value.original_text).substring(0, 80).trim(this) + " ...";
+        //var translatedText = $.trim(value.translated_text).substring(0, 80).trim(this) + " ...";
+        var li = $("<li></li>")
+            .append(sprintf('<div><a href="/trequest/%s/responses?rel=search" class="truncate">%s</a></div>', value.request_id, value.original_text))
+            .append(sprintf('<div class="truncate">%s</div>', value.translated_text));
+        ul.append(li);
+    });
+    if (results.length > 0) {
+        $('.truncate').succinct({size: 60});
+        $("#search-results").show();
+    }
+}
+</script>
+    
+
+  </body>
+</html>
+
