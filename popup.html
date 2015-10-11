@@ -10,108 +10,105 @@
     <meta charset="UTF-8">
     <style>
       body {
+        padding: 1em;
+        height: 480px;
         font-family: sans-serif;
         font-size: 100%;
+      }
+      div.content {
+        width: 800px;
       }
       #status {
         /* avoid an excessively wide status text */
         white-space: pre;
         text-overflow: ellipsis;
         overflow: hidden;
-        width: 400px;
         max-width: 800px
-;b      }
+      }
     </style>
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
 
-    <!--
-      - JavaScript and HTML must be in separate files: see our Content Security
-      - Policy documentation[1] for details and explanation.
-      -
-      - [1]: https://developer.chrome.com/extensions/contentSecurityPolicy
-     -->
+    <!-- Optional theme -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap-theme.min.css">
+
+    <link rel="stylesheet" href="popup.css"/>
+
     <script src="jquery.js"></script>
     <script src="jquery.cookie.js"></script>
     <script src="jquery.autoresize.js"></script>
     <script src="sprintf.js"></script>
-    <script src="bootstrap.js"></script>
     <script src="popup.js"></script>
+
+    <!-- Latest compiled and minified JavaScript -->
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
   </head>
   <body>
 
   <form id="translation-form" method="get" onsubmit="return performTranslation()">
-  <div class="row-fluid">
-
-
-      <div class="span3">
-        <label>원문 언어</label>
-        <select name="sl" onchange="state.selectSource(this.value)">
-          <option value="auto">자동 감지</option>
-          <option value="ko">한국어</option>
-          <option value="en">영어</option>
-        </select>
-      </div>
-      <div class="span3">
-        <label>중간 언어</label>
-        <select name="il" onchange="state.selectIntermediate(this.value)">
-          <option value="">없음</option>
-          <option value="ja">일본어</option>
-          <option value="ru">러시아어</option>
-        </select>
-      </div>
-
-      <div class="span3">
-        <label>번역문 언어</label>
-        <select name="tl" onchange="state.selectTarget(this.value)">
-          <option value="ko">한국어</option>
-          <option value="en">영어</option>
-        </select>
-      </div>
-
-      <div class="span3" style="text-align:right;">
-        <label>&nbsp;</label>
-        <button class="btn" onclick="state.swapLanguages()"
-          data-toggle="tooltip" data-placement="top"
-          title="{{ _('Swap languages') }}">
-          <img src="/static/swap.png" alt="{{ _("Swap languages") }}"/>
-        </button>
-        <button class="btn btn-primary translate">Translate</button>
-      </div>
-
-  </div>
-  <div class="row-fluid" style="margin-top:1em;">
-    <div class="span6">
-
-      <textarea id="text" name="t" placeholder=""></textarea>
-
+  <div class="row content">
+    <div class="col-sm-3">
+      <label>원문 언어</label>
+      <select name="sl" onchange="state.selectSource(this.value)">
+        <option value="auto">자동 감지</option>
+        <option value="ko">한국어</option>
+        <option value="en">영어</option>
+      </select>
     </div>
-    <div class="span6">
+    <div class="col-sm-3">
+      <label>중간 언어</label>
+      <select name="il" onchange="state.selectIntermediate(this.value)">
+        <option value="">없음</option>
+        <option value="ja">일본어</option>
+        <option value="ru">러시아어</option>
+      </select>
+    </div>
 
+    <div class="col-sm-3">
+      <label>번역문 언어</label>
+      <select name="tl" onchange="state.selectTarget(this.value)">
+        <option value="ko">한국어</option>
+        <option value="en">영어</option>
+      </select>
+    </div>
+
+    <div class="col-sm-3" style="text-align:right;">
+      <label>&nbsp;</label>
+      <button class="btn" onclick="state.swapLanguages()"
+        data-toggle="tooltip" data-placement="top"
+        title="{{ _('Swap languages') }}">
+        <img src="/static/swap.png" alt="{{ _("Swap languages") }}"/>
+      </button>
+      <button class="btn btn-primary translate">Translate</button>
+    </div>
+  </div><!-- div.row -->
+  <div class="row" style="margin-top:1em;">
+    <div class="col-sm-6">
+      <textarea id="text" name="t" placeholder=""></textarea>
+    </div>
+    <div class="col-sm-6">
       <div id="error-message" class="alert alert-error"></div>
       <div>
         <div id="progress-message" style="float:left;">
-          {{ _("Translation in progress...") }} <img src="/static/progress.gif"/>
+         번역중... <img src="/static/progress.gif"/>
         </div>
         <pre id="result"></pre>
       </div>
-
     </div>
   </div>
   </form>
 
-
-<div id="captcha-dialog" class="modal hide fade">
-  <div class="modal-header">
-    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-    <h3>Opps...</h3>
+  <div id="captcha-dialog" class="modal hide fade">
+    <div class="modal-header">
+      <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+      <h3>Opps...</h3>
+    </div>
+    <div class="modal-body">
+    </div>
+    <div class="modal-footer">
+      <a href="#" class="btn" data-dismiss="modal">{{ _("Close") }}</a>
+    </div>
   </div>
-  <div class="modal-body">
-  </div>
-  <div class="modal-footer">
-    <a href="#" class="btn" data-dismiss="modal">{{ _("Close") }}</a>
-  </div>
-</div>
-
-<!--<script type="text/javascript" src="/static/jquery.succinct.js"></script>-->
 
   </body>
 </html>
